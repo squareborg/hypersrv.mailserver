@@ -1,0 +1,30 @@
+service imap-login {
+  inet_listener imap {
+  address = 0.0.0.0
+  port = 143
+  }
+  inet_listener imaps {
+  port = 0
+  }
+}
+service lmtp {
+ unix_listener /var/spool/postfix/private/dovecot-lmtp {
+   group = postfix
+   mode = 0660
+   user = postfix
+  }
+}
+service imap {
+}
+service auth {
+  unix_listener /var/spool/postfix/private/auth {
+    group = postfix
+    mode = 0660
+    user = postfix
+  }
+  user = doveauth
+}
+service auth-worker {
+ user = doveauth
+}
+verbose_proctitle = yes

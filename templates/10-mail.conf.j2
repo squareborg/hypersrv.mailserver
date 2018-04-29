@@ -1,0 +1,17 @@
+mail_location = maildir:~/maildir
+mail_plugins = acl quota
+namespace inbox {
+  type = private
+  separator = /
+  prefix =
+  hidden = no
+  inbox = yes
+}
+namespace {
+  type = public
+  separator = /
+  prefix = Public/
+  location = maildir:/var/vmail/public:LAYOUT=fs:INDEX=~/public
+  list = yes
+  subscriptions = no
+}

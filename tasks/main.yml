@@ -1,0 +1,100 @@
+---
+# tasks file for hypersrv.mailserver
+
+- name: install required packages
+  apt:
+    name: "{{item}}"
+    state: present
+  with_items:
+    - postfix
+    - dovecot-imapd
+    - dovecot-lmtpd
+    - dovecot-sieve
+
+- name: vmail group
+  group:
+    name: vmail
+    gid: 5000
+
+- name: vmail user
+  user:
+    name: vmail
+    group: vmail
+    uid: 5000
+
+- name: doveauth group
+  group:
+    name: doveauth
+
+- name: doveauth user
+  user:
+    name: doveauth
+    group: doveauth
+    createhome: no
+
+- name: create vmail structure
+  file:
+    path: /var/vmail
+    state: directory
+    owner: vmail
+    group: vmail
+
+- name: create vmail conf.d
+  file:
+    path: /var/vmail/conf.d
+    state: directory
+    owner: vmail
+    group: vmail
+    mode: 0500
+
+- name: create vmail auth.d
+  file:
+    path: /var/vmail/auth.d
+    state: directory
+    owner: doveauth
+    group: dovecot
+    mode: 0500
+
+- name: postfix config
+  template:
+    src: "{{item}}.j2"
+    dest: /etc/postfix/{{item}}
+  with_items:
+    - main.cf
+    - master.cf
+  notify: restart postfix
+
+- name: virtual_alias_maps
+  file:
+    state: touch
+    path: /etc/postfix/virtual
+  notify: postmap virtual
+
+- name: ssl key
+  copy:
+    src: ssl.pem
+    dest: /etc/dovecot/private/ssl.pem
+    
+- name: ssl cert
+  copy:
+    src: ssl.crt
+    dest: /etc/dovecot/ssl.crt
+    
+- name: dovecot config
+  template:
+    src: "{{item}}.j2"
+    dest: /etc/dovecot/conf.d/{{item}}
+  with_items:
+    - 10-auth.conf
+    - 10-logging.conf
+    - 10-mail.conf
+    - 10-master.conf
+    - 10-ssl.conf
+    - 20-imapd.conf
+    - 20-lmtp.conf
+    - 90-plugin.conf
+    - 90-sieve.conf
+  notify: restart dovecot
+
+
+
