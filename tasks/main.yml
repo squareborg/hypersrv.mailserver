@@ -10,6 +10,8 @@
     - dovecot-imapd
     - dovecot-lmtpd
     - dovecot-sieve
+    - opendkim
+    - opendkim-tools
 
 - name: vmail group
   group:
@@ -31,6 +33,57 @@
     name: doveauth
     group: doveauth
     createhome: no
+
+
+- name: create dkim structure
+  file:
+    path: /etc/opendkim/keys
+    state: directory
+
+- name: dkim main config
+  template:
+    src: opendkim.conf.j2
+    dest: /etc/opendkim.conf
+  notify: restart opendkim
+
+- name: dkim default conf
+  template:
+    src: opendkim.j2
+    dest: /etc/default/opendkim
+  notify: restart opendkim
+
+- name: dkim config
+  template:
+    src: "{{item}}.j2"
+    dest: /etc/opendkim/{{item}}
+  with_items:
+    - KeyTable
+    - SigningTable
+    - TrustedHosts
+  notify: restart opendkim
+
+- name: dkim domain keys structure
+  file:
+    path: /etc/opendkim/keys/{{item}}
+    state: directory
+  with_items: "{{mail_domains}}"
+
+- name: copy dkim keys
+  copy:
+    src: keys/{{item}}/mail.private
+    dest: /etc/opendkim/keys/{{item}}/mail.private
+    owner: opendkim
+    group: opendkim
+  with_items: "{{mail_domains}}"
+  notify: restart opendkim
+
+- name: copy dkim public keys
+  copy:
+    src: keys/{{item}}/mail.txt
+    dest: /etc/opendkim/keys/{{item}}/mail.txt
+  with_items: "{{mail_domains}}"
+  notify: restart opendkim
+
 
 - name: create vmail structure
   file:
